@@ -1,0 +1,108 @@
+{
+  "audit_passed": true,
+  "scope": "Three fresh seeds, same 40 training clips, native 6000 iterations. Error metrics use identical per-seed frame IDs across all three variants; completion separately reported.",
+  "results": {
+    "baseline": {
+      "mean_horizontal_error_cm": {
+        "mean": 81.47311482033213,
+        "sample_std": 3.1116454293968574,
+        "values": [
+          79.80502818724946,
+          79.55117328265445,
+          85.06314299109246
+        ]
+      },
+      "mean_yaw_error_deg": {
+        "mean": 2.082855838896727,
+        "sample_std": 0.10646426965041525,
+        "values": [
+          2.205592003362235,
+          2.0154448962967155,
+          2.027530617031231
+        ]
+      },
+      "joint_rmse_deg": {
+        "mean": 8.203917639544951,
+        "sample_std": 0.32288446088472256,
+        "values": [
+          7.84491574698937,
+          8.470554146513836,
+          8.296283025131647
+        ]
+      },
+      "completed_clips_per_seed": [
+        39,
+        40,
+        40
+      ]
+    },
+    "root_position": {
+      "mean_horizontal_error_cm": {
+        "mean": 4.746369688687528,
+        "sample_std": 0.16618988504138152,
+        "values": [
+          4.56786151823561,
+          4.774630309497212,
+          4.896617238329761
+        ]
+      },
+      "mean_yaw_error_deg": {
+        "mean": 2.032566266995065,
+        "sample_std": 0.07944389972544114,
+        "values": [
+          1.9714938558893373,
+          2.122381082981083,
+          2.003823862114774
+        ]
+      },
+      "joint_rmse_deg": {
+        "mean": 8.105298349285528,
+        "sample_std": 0.04326415161260643,
+        "values": [
+          8.058797961629828,
+          8.14436221680613,
+          8.112734869420628
+        ]
+      },
+      "completed_clips_per_seed": [
+        40,
+        40,
+        40
+      ]
+    },
+    "torso_position": {
+      "mean_horizontal_error_cm": {
+        "mean": 4.938579037625309,
+        "sample_std": 0.5023900430934186,
+        "values": [
+          4.6819809628136815,
+          4.616307518512356,
+          5.5174486315498905
+        ]
+      },
+      "mean_yaw_error_deg": {
+        "mean": 2.1354031688327364,
+        "sample_std": 0.15082488994269966,
+        "values": [
+          2.1508161199287237,
+          1.9774636139376431,
+          2.277929772631843
+        ]
+      },
+      "joint_rmse_deg": {
+        "mean": 8.088200840085744,
+        "sample_std": 0.24771205585243575,
+        "values": [
+          7.905055549131653,
+          7.9894983836297016,
+          8.370048587495875
+        ]
+      },
+      "completed_clips_per_seed": [
+        40,
+        39,
+        39
+      ]
+    }
+  }
+}

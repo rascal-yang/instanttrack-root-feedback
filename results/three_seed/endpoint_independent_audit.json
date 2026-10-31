@@ -1,0 +1,136 @@
+{
+  "passed": true,
+  "seeds": {
+    "1": {
+      "passed": true,
+      "endpoints": {
+        "baseline": {
+          "frames": 435953,
+          "mean_horizontal_error_cm": 79.80502818724946,
+          "mean_yaw_error_deg": 2.205592003362235,
+          "joint_rmse_deg": 7.84491574698937
+        },
+        "root_position": {
+          "frames": 441100,
+          "mean_horizontal_error_cm": 4.605228317642862,
+          "mean_yaw_error_deg": 2.077835684993059,
+          "joint_rmse_deg": 8.088409111804863
+        },
+        "torso_position": {
+          "frames": 441100,
+          "mean_horizontal_error_cm": 4.703658104109218,
+          "mean_yaw_error_deg": 2.2100353195277114,
+          "joint_rmse_deg": 7.944521860910119
+        }
+      },
+      "identical_prefix_audit": {
+        "baseline": {
+          "frames": 435953,
+          "mean_horizontal_error_cm": 79.80502818724946,
+          "mean_yaw_error_deg": 2.205592003362235,
+          "joint_rmse_deg": 7.84491574698937
+        },
+        "root_position": {
+          "frames": 435953,
+          "mean_horizontal_error_cm": 4.56786151823561,
+          "mean_yaw_error_deg": 1.9714938558893373,
+          "joint_rmse_deg": 8.058797961629828
+        },
+        "torso_position": {
+          "frames": 435953,
+          "mean_horizontal_error_cm": 4.6819809628136815,
+          "mean_yaw_error_deg": 2.1508161199287237,
+          "joint_rmse_deg": 7.905055549131653
+        }
+      }
+    },
+    "2": {
+      "passed": true,
+      "endpoints": {
+        "baseline": {
+          "frames": 441100,
+          "mean_horizontal_error_cm": 81.10158901331035,
+          "mean_yaw_error_deg": 2.1035000208694394,
+          "joint_rmse_deg": 8.565386594212665
+        },
+        "root_position": {
+          "frames": 441100,
+          "mean_horizontal_error_cm": 4.845394203157426,
+          "mean_yaw_error_deg": 2.2189920364514357,
+          "joint_rmse_deg": 8.24026622838595
+        },
+        "torso_position": {
+          "frames": 433629,
+          "mean_horizontal_error_cm": 4.616307518512356,
+          "mean_yaw_error_deg": 1.9774636139376431,
+          "joint_rmse_deg": 7.9894983836297016
+        }
+      },
+      "identical_prefix_audit": {
+        "baseline": {
+          "frames": 433629,
+          "mean_horizontal_error_cm": 79.55117328265445,
+          "mean_yaw_error_deg": 2.0154448962967155,
+          "joint_rmse_deg": 8.470554146513836
+        },
+        "root_position": {
+          "frames": 433629,
+          "mean_horizontal_error_cm": 4.774630309497212,
+          "mean_yaw_error_deg": 2.122381082981083,
+          "joint_rmse_deg": 8.14436221680613
+        },
+        "torso_position": {
+          "frames": 433629,
+          "mean_horizontal_error_cm": 4.616307518512356,
+          "mean_yaw_error_deg": 1.9774636139376431,
+          "joint_rmse_deg": 7.9894983836297016
+        }
+      }
+    },
+    "3": {
+      "passed": true,
+      "endpoints": {
+        "baseline": {
+          "frames": 441100,
+          "mean_horizontal_error_cm": 84.71753748452036,
+          "mean_yaw_error_deg": 2.099625070596436,
+          "joint_rmse_deg": 8.336194048409709
+        },
+        "root_position": {
+          "frames": 441100,
+          "mean_horizontal_error_cm": 4.9673136373007125,
+          "mean_yaw_error_deg": 2.071150962244829,
+          "joint_rmse_deg": 8.168994908382386
+        },
+        "torso_position": {
+          "frames": 434476,
+          "mean_horizontal_error_cm": 5.5174486315498905,
+          "mean_yaw_error_deg": 2.277929772631843,
+          "joint_rmse_deg": 8.370048587495875
+        }
+      },
+      "identical_prefix_audit": {
+        "baseline": {
+          "frames": 434476,
+          "mean_horizontal_error_cm": 85.06314299109246,
+          "mean_yaw_error_deg": 2.027530617031231,
+          "joint_rmse_deg": 8.296283025131647
+        },
+        "root_position": {
+          "frames": 434476,
+          "mean_horizontal_error_cm": 4.896617238329761,
+          "mean_yaw_error_deg": 2.003823862114774,
+          "joint_rmse_deg": 8.112734869420628
+        },
+        "torso_position": {
+          "frames": 434476,
+          "mean_horizontal_error_cm": 5.5174486315498905,
+          "mean_yaw_error_deg": 2.277929772631843,
+          "joint_rmse_deg": 8.370048587495875
+        }
+      }
+    }
+  },
+  "source_hashes_unchanged": true,
+  "definition": "Direct native world-state versus shared raw-reference recomputation; no spatial/time alignment. Secondary identical-prefix comparisons use the same frame IDs for all variants within each seed."
+}

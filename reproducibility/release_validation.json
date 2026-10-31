@@ -1,0 +1,56 @@
+{
+  "validated_utc": "2026-10-31T16:11:18.043751+00:00",
+  "scope": "Repository packaging and interface checks. Original three-seed results are retained; no new full-scale training is claimed.",
+  "environment_lock": "uv.lock; isolated Python 3.12 environment; uv sync --frozen --extra export succeeded",
+  "numerical_unit_tests": {
+    "passed": 8,
+    "total": 8
+  },
+  "publication_checks": {
+    "passed": 2,
+    "total": 2
+  },
+  "input_files_sha256_verified": 80,
+  "remote_pinned_robot_checksum_verified": true,
+  "stored_trajectory_recomputation": {
+    "clips": 40,
+    "paired_frames": 441100,
+    "root_xy_difference_cm": 0.0,
+    "heading_difference_deg": 0.0,
+    "joint_rmse_difference_deg": 1.7763568394002505e-15
+  },
+  "onnx_fp32_parity": {
+    "checkpoint_iteration": 6000,
+    "observation_dimensions": 102,
+    "random_frames": 64,
+    "max_absolute_difference": 3.81e-06
+  },
+  "gpu_training_smoke": {
+    "iterations": 3,
+    "actor_updates": 2,
+    "environments": 16,
+    "policy_and_world_model_parameters_finite": true,
+    "note": "Short, reduced-size API test; not a performance evaluation"
+  },
+  "batch_evaluation": {
+    "returncode": 0,
+    "checkpoints": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "pose_metric_entrypoint": {
+    "returncode": 0
+  },
+  "onnx_closed_loop_smoke": {
+    "control_steps": 53,
+    "failed": false,
+    "observation_max_abs_difference": 5.96e-08,
+    "note": "Short reference prefix; not full-motion sim-to-sim or real deployment"
+  },
+  "code_source": "Eight numeric core modules byte-identical to the validated research checkout; train.py default position_obs changed from none to root",
+  "original_training_checkpoints_in_git": false,
+  "global_environment_or_driver_changes": false
+}

@@ -1,0 +1,38 @@
+# Local environments, caches and build products
+.venv/
+venv/
+envs/
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.coverage
+
+# Downloaded third-party motions and robot assets
+/data/
+
+# Private runs and generated artifacts
+/logs/
+/runs/
+/outputs/
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.npz
+*.npy
+*.mp4
+*.gif
+*.log
+
+# Credentials and editor state
+.env
+.env.*
+*.pem
+*.key
+.idea/
+.vscode/
+.DS_Store

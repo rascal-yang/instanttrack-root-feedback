@@ -1,0 +1,19 @@
+name: Checks
+on: [push, pull_request]
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Publication evidence and source checks
+        env:
+          CUDA_VISIBLE_DEVICES: ''
+          PYTHONPATH: src
+          OMP_NUM_THREADS: '1'
+        run: |
+          python -m unittest discover -s tests -p test_release.py -v
+          python tools/report_results.py --check
+          python -m compileall -q src scripts tools

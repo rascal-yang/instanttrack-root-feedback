@@ -1,0 +1,204 @@
+diff --git a/src/instanttrack/evaluate.py b/src/instanttrack/evaluate.py
+index a441603..ab9ff10 100644
+--- a/src/instanttrack/evaluate.py
++++ b/src/instanttrack/evaluate.py
+@@ -83,7 +83,10 @@ if args.dr_from:
+     print("pd_gain_scale on this robot:", robot.dr.pd_gain_scale)
+ kin = Kinematics(robot, dev)
+ motion = MotionLib.from_dir(args.motion_dir or robot.motion_dir, robot, kin, dev)
+-mdp = MDP(kin, motion, torch.tensor(robot.default_joint_pos_list(), device=dev), XiLayout(robot, dev).dim, robot.sensing)
++checkpoint = torch.load(args.ckpt, map_location=dev, weights_only=False) if args.ckpt else None
++run_args = checkpoint["args"] if checkpoint is not None else json.load(open(os.path.join(args.run_dir, "args.json")))
++mdp = MDP(kin, motion, torch.tensor(robot.default_joint_pos_list(), device=dev), XiLayout(robot, dev).dim, robot.sensing,
++          position_obs=run_args.get("position_obs", "none"))
+ C = len(motion.names)
+ N = C * args.repeats
+ clip_of = torch.arange(N, device=dev) % C
+@@ -92,11 +95,13 @@ clip_of = torch.arange(N, device=dev) % C
+ @torch.no_grad()
+ def evaluate(env: TrackingSim, ck: dict, record: str | None = None) -> dict:
+     a_ = ck["args"]
++    if a_.get("position_obs", "none") != mdp.position_obs:
++        raise ValueError("Checkpoint and evaluator position-observation modes differ")
+     K, Hh = a_["goal_frames"], a_["hist"]
+     networks.AMP_DTYPE = torch.bfloat16 if a_.get("amp", "none") == "bf16" else None
+     widths = lambda key, default: tuple(int(x) for x in a_.get(key, default).split(","))  # noqa: E731
+     pi = Policy(mdp.obs_dim, motion.goal_dim(K), robot.num_joints, hist=Hh, enc_hidden=widths("enc_hidden", "2048,1024,512,256"),
+-                dec_hidden=widths("dec_hidden", "2048,1024,512,256")).to(dev)  # fmt: skip
++                dec_hidden=widths("dec_hidden", "2048,1024,512,256"), base_obs_dim=mdp.base_obs_dim).to(dev)  # fmt: skip
+     pi.load_state_dict(ck["pi"])
+     pi.eval()
+     ids = torch.arange(N, device=dev)
+@@ -146,7 +151,7 @@ def evaluate(env: TrackingSim, ck: dict, record: str | None = None) -> dict:
+ sim_cfg = make_sim(robot)
+ env = TrackingSim(sim_cfg, N, robot, motion, mdp, dev, eval_mode=True, randomize=args.dr_from is not None)
+ if args.ckpt:
+-    ck = torch.load(args.ckpt, map_location=dev)
++    ck = checkpoint
+     res = evaluate(env, ck, args.record)
+     print(json.dumps({k: v for k, v in res.items() if k != "per_clip"}, indent=1))
+     if args.record is None and (args.dr_from or args.repeats > 1):
+diff --git a/src/instanttrack/mdp.py b/src/instanttrack/mdp.py
+index a135182..659ebe0 100644
+--- a/src/instanttrack/mdp.py
++++ b/src/instanttrack/mdp.py
+@@ -85,7 +85,7 @@ def inv_dim(J: int) -> int:
+ 
+ class MDP:
+     def __init__(self, kin: Kinematics, motion: MotionLib, default_q: torch.Tensor, xi_dim: int,
+-                 sensing: SensingCfg = SensingCfg(), cfg: RewardCfg = RewardCfg()):  # fmt: skip
++                 sensing: SensingCfg = SensingCfg(), cfg: RewardCfg = RewardCfg(), position_obs: str = "none"):  # fmt: skip
+         self.kin, self.motion, self.cfg = kin, motion, cfg
+         self.default_q = default_q
+         mid, half = (kin.q_lo + kin.q_hi) / 2, (kin.q_hi - kin.q_lo) / 2
+@@ -93,10 +93,22 @@ class MDP:
+         dev = default_q.device
+         J = default_q.shape[0]
+         self.num_j = J
++        if position_obs not in ("none", "root", "torso"):
++            raise ValueError(f"Unknown position observation: {position_obs}")
++        if position_obs != "none" and sensing.stateful:
++            raise ValueError("Position-feedback pilot supports stateless sensing only")
++        self.position_obs = position_obs
++        self.base_obs_dim = obs_dim(J)
++        if position_obs == "torso":
++            self.position_body = [kin.body_names[i] for i in kin.tracked_idx].index("torso_link")
+         self.obs_dim, self.xi_dim = obs_dim(J), xi_dim
+         self.critic_extra = J + len(kin.tracked_idx) * 3 + 3 + 6 + self.xi_dim
+         self.obs_noise = obs_noise(sensing, J).to(dev)
+         self.obs_scale = obs_scale(J).to(dev)
++        if position_obs != "none":
++            self.obs_dim += 3
++            self.obs_noise = torch.cat((self.obs_noise, torch.zeros(3, device=dev)))
++            self.obs_scale = torch.cat((self.obs_scale, torch.ones(3, device=dev)))
+         # InstantTrack contact reward (training only): tracked-body indices of the feet, set by the trainer
+         self.feet: list[int] = []
+ 
+@@ -108,9 +120,30 @@ class MDP:
+         dq0 = xi[..., 1 : 1 + q.shape[-1]]
+         g_b = -R[..., 2, :]  # R^T (0,0,-1)
+         rel = mat_to_6d(mm3(Rt, self.motion.root_R[f]))
+-        return torch.cat((q - self.default_q - dq0, qd, mv3(Rt, w), g_b, a_prev, rel), -1)
++        base = torch.cat((q - self.default_q - dq0, qd, mv3(Rt, w), g_b, a_prev, rel), -1)
++        if self.position_obs == "none":
++            return base
++        return torch.cat((base, self.position_error(S, f)), -1)
++
++    def position_error(self, S, f) -> torch.Tensor:
++        """Reference-minus-robot position in the current root/torso frame.
++
++        Uses simulator state, as the native relative-orientation observation does.
++        A deployed policy would require the corresponding position estimate.
++        """
++        if self.position_obs == "root":
++            return mv3(S[1].transpose(-1, -2), self.motion.root_p[f] - S[0])
++        bp, bR, _, _ = self.kin.forward(*S)
++        i = self.position_body
++        return mv3(bR[..., i, :, :].transpose(-1, -2), self.motion.body_p[f, i, :] - bp[..., i, :])
+ 
+     def add_noise(self, o: torch.Tensor) -> torch.Tensor:
++        if self.position_obs != "none":
++            # Preserve native random draws for the original channels. The added
++            # position estimate is exact in this first diagnostic.
++            base = o[..., :self.base_obs_dim]
++            noisy = base + (2 * torch.rand_like(base) - 1) * self.obs_noise[:self.base_obs_dim]
++            return torch.cat((noisy, o[..., self.base_obs_dim:]), -1)
+         return o + (2 * torch.rand_like(o) - 1) * self.obs_noise
+ 
+     # ---------------- reward / termination ----------------
+diff --git a/src/instanttrack/networks.py b/src/instanttrack/networks.py
+index 98c14d1..f174c82 100644
+--- a/src/instanttrack/networks.py
++++ b/src/instanttrack/networks.py
+@@ -173,16 +173,32 @@ class Policy(nn.Module):
+     """a = dec(enc(g), o_{t-9:t}); deterministic, latent z in R^32 bounded by tanh."""
+ 
+     def __init__(self, obs_dim: int, goal_dim: int, act_dim: int, hist: int = 10, z_dim: int = 32,
+-                 enc_hidden=(2048, 1024, 512, 256), dec_hidden=(2048, 1024, 512, 256)):  # fmt: skip
++                 enc_hidden=(2048, 1024, 512, 256), dec_hidden=(2048, 1024, 512, 256),
++                 base_obs_dim: int | None = None):  # fmt: skip
+         super().__init__()
+         self.hist = hist
++        base_obs_dim = obs_dim if base_obs_dim is None else base_obs_dim
+         self.enc = mlp(goal_dim, list(enc_hidden), z_dim)
+-        self.dec = mlp(z_dim + obs_dim * hist, list(dec_hidden), act_dim)
++        self.dec = mlp(z_dim + base_obs_dim * hist, list(dec_hidden), act_dim)
+         with torch.no_grad():
+             self.dec[-1].weight.mul_(0.01)
+             self.dec[-1].bias.zero_()
+         self.obs_norm = RunningNorm(obs_dim)
+         self.goal_norm = RunningNorm(goal_dim)
++        if obs_dim != base_obs_dim:
++            # Preserve native shared weights and RNG state; added inputs start
++            # with zero connections so the actor initially ignores them.
++            first = self.dec[0]
++            with torch.random.fork_rng(devices=[]):
++                expanded = nn.Linear(z_dim + obs_dim * hist, first.out_features)
++            with torch.no_grad():
++                expanded.weight.zero_()
++                expanded.bias.copy_(first.bias)
++                expanded.weight[:, :z_dim].copy_(first.weight[:, :z_dim])
++                for t in range(hist):
++                    expanded.weight[:, z_dim+t*obs_dim:z_dim+t*obs_dim+base_obs_dim].copy_(
++                        first.weight[:, z_dim+t*base_obs_dim:z_dim+(t+1)*base_obs_dim])
++            self.dec[0] = expanded
+ 
+     def forward(self, obs_hist: torch.Tensor, goal: torch.Tensor) -> torch.Tensor:
+         """obs_hist: (B, hist, obs_dim) noisy observations, newest last."""
+diff --git a/src/instanttrack/sensing.py b/src/instanttrack/sensing.py
+index 802842d..3da746f 100644
+--- a/src/instanttrack/sensing.py
++++ b/src/instanttrack/sensing.py
+@@ -121,6 +121,7 @@ class ObsPipeline:
+         self.J, self.obs_dim, self.device = J, mdp.obs_dim, device
+         # delay group of every observation dim: q, qd, angular velocity, attitude (gravity + ref ori); -1 = exact
+         group = [0] * J + [1] * J + [2] * 3 + [3] * 3 + [-1] * J + [3] * 6
++        group += [-1] * (mdp.obs_dim - len(group))
+         self.group = torch.tensor([max(g, 0) for g in group], device=device)
+         self.delayed = torch.tensor([g >= 0 for g in group], device=device)
+         jf = self.cfg.joint_vel_filter
+@@ -225,7 +226,10 @@ class ObsPipeline:
+         qd_obs = st["qd_f"] if self.cfg.joint_vel_filter is not None else qd
+         g_b = -R_att[..., 2, :]
+         rel = mat_to_6d(R_att.transpose(-1, -2) @ self.mdp.motion.root_R[f])
+-        return torch.cat((q - self.mdp.default_q - dq0, qd_obs, ang_vel, g_b, a_prev, rel), -1)
++        base = torch.cat((q - self.mdp.default_q - dq0, qd_obs, ang_vel, g_b, a_prev, rel), -1)
++        if self.mdp.position_obs == "none":
++            return base
++        return torch.cat((base, self.mdp.position_error(S, f)), -1)
+ 
+     def observe(self, st: dict, raw: torch.Tensor, noise: bool, delay: bool) -> tuple[torch.Tensor, dict]:
+         st = dict(st)
+diff --git a/src/instanttrack/train.py b/src/instanttrack/train.py
+index e201d6c..b2ef8b9 100644
+--- a/src/instanttrack/train.py
++++ b/src/instanttrack/train.py
+@@ -70,6 +70,8 @@ parser.add_argument("--log_every", type=int, default=50)
+ parser.add_argument("--motion_dir", type=str, default=None, help="defaults to the robot's motion directory")
+ parser.add_argument("--log_dir", type=str, default=os.path.join(REPO, "logs", "run"))
+ parser.add_argument("--seed", type=int, default=0)
++parser.add_argument("--position_obs", choices=["none", "root", "torso"], default="none",
++                    help="append three reference-relative position channels to the policy observation")
+ parser.add_argument("--resume", type=str, default=None)
+ parser.add_argument("--amp", type=str, default="bf16", choices=["none", "bf16"], help="autocast dtype for MLP matmuls")
+ args = parser.parse_args()
+@@ -104,7 +106,8 @@ kin = Kinematics(robot, dev)
+ motion = MotionLib.from_dir(args.motion_dir or robot.motion_dir, robot, kin, dev)
+ layout = XiLayout(robot, dev)
+ normalize_xi = layout.normalize
+-mdp = MDP(kin, motion, torch.tensor(robot.default_joint_pos_list(), device=dev), layout.dim, robot.sensing)
++mdp = MDP(kin, motion, torch.tensor(robot.default_joint_pos_list(), device=dev), layout.dim, robot.sensing,
++          position_obs=args.position_obs)
+ pipe = ObsPipeline(robot, mdp, layout, dev, PHYSICS_DT)
+ assert not args.anchored or (args.no_sync and not pipe.stateful), "--anchored needs --no_sync and a stateless sensing model"
+ K, Hh, HZ = args.goal_frames, args.hist, args.horizon
+@@ -116,7 +119,8 @@ networks.RunningNorm.no_sync = args.no_sync
+ rotations.ELEMENTWISE = args.fused_rot
+ wm = WorldModel(J, layout.dim, use_prev_action=robot.has_action_delay, hidden=widths(args.wm_hidden),
+                 contact_modes=args.wm_contact > 0).to(dev)  # fmt: skip
+-pi = Policy(mdp.obs_dim, GOAL_DIM, J, hist=Hh, enc_hidden=widths(args.enc_hidden), dec_hidden=widths(args.dec_hidden)).to(dev)
++pi = Policy(mdp.obs_dim, GOAL_DIM, J, hist=Hh, enc_hidden=widths(args.enc_hidden), dec_hidden=widths(args.dec_hidden),
++            base_obs_dim=mdp.base_obs_dim).to(dev)
+ critic = Critic(CRITIC_IN).to(dev)
+ fused = {"fused": True} if args.fused_adam else {}
+ opt_wm = torch.optim.Adam(wm.parameters(), lr=args.lr, **fused)

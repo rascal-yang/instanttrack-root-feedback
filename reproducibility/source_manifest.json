@@ -1,0 +1,32 @@
+{
+  "upstream_repository": "https://github.com/Huy-Quang-Dao/instantTrack",
+  "upstream_commit": "a33691a08bca8802d9d2985f62e2567479735a8e",
+  "validated_numeric_modules_unchanged": [
+    "mdp.py",
+    "networks.py",
+    "sensing.py",
+    "env.py",
+    "kinematics.py",
+    "motion.py",
+    "buffer.py",
+    "dr.py"
+  ],
+  "release_sha256": {
+    "src/instanttrack/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/instanttrack/buffer.py": "de0c2565ce061e34463e784011ec77c2e2988a2313ca11977ee3f4b6d7c31630",
+    "src/instanttrack/checkpoint.py": "b208b5f0e2e34ea511919f5d30f4082772632a3ce34229d915be6b09e906764f",
+    "src/instanttrack/dr.py": "aa982a9536ceb9ad74b5196bc81d99d9d4f50bca58c8f4f47becb8e0ab7f0044",
+    "src/instanttrack/env.py": "25c259095d5ae9ee99a0d5042cdbc59413b3565261c94c0457f748779cc16d51",
+    "src/instanttrack/evaluate.py": "048845ab108c503a3b27d09285b5826fde8169e3e591d4553ffcbbc8b1007302",
+    "src/instanttrack/g1/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/instanttrack/g1/g1_constants.py": "7060b3449155bce913aef9e93f2b33945d1d2d5a795cd7c088d3a8d8aac66507",
+    "src/instanttrack/kinematics.py": "9941b09d15dffce47fcf48aca55f4dd1bcaa21487a4fd5380a7e73854ad0f27a",
+    "src/instanttrack/mdp.py": "f2a389a0ac8d3a672f571cd4bbb538558c7c6de4a936f7320c011f7874412d78",
+    "src/instanttrack/motion.py": "707f4411fa5e64c62611b1fa181a8d130433c9fd99251b07d55851f1550a3e32",
+    "src/instanttrack/networks.py": "40f4026ae5e9b1f23e15eeb41a32c998e4ac2e3025a81a36118cfe8a54f78654",
+    "src/instanttrack/robot.py": "d37be5bc2ab5b50d9ff8b7a26fde03955aebc6849899c14ed49ab251391a0c7e",
+    "src/instanttrack/rotations.py": "c06b07af580994a4bc71d650cd9d186e4249499ebdd0bc67833e7388cf7ae6ad",
+    "src/instanttrack/sensing.py": "270db4e708f78a3899b0e923adbd6819e405ec7b9578afa6472bee38194289fc",
+    "src/instanttrack/train.py": "4c4d18753dd9204c395c5c801dd41c1222be6dffdb50fc2bf68203baffe08ed1"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "confirmatory_seeds": [
+    1,
+    2,
+    3
+  ],
+  "pilot_seed_zero_excluded_from_primary_statistics": true,
+  "total_fresh_trainings": 9,
+  "budget_per_training": {
+    "iterations": 6000,
+    "actor_updates": 5500,
+    "wm_gradient_steps": 30000,
+    "real_env_transitions": 61702144,
+    "lr_decay_iters": 250000
+  },
+  "checkpoint_iterations": [
+    0,
+    2000,
+    4000,
+    6000
+  ],
+  "acceptance_per_seed": {
+    "completed_clips": 40,
+    "horizontal_error_ratio_at_most": 0.8,
+    "joint_rmse_ratio_at_most": 1.05
+  },
+  "acceptance_across_seeds": "Every one of the three fresh paired seeds must pass; do not replace or drop bad seeds.",
+  "reporting": "Per-seed paired metrics plus mean and sample SD across seeds; no significance claim from three seeds.",
+  "initialization": "Verify identical WM, shared actor/critic weights and CPU/CUDA RNG within each seed; verify distinct initial models across seeds.",
+  "comparison": "Matched updates/transitions; native preset/reward/reset sampler/learning rate schedule unchanged. Each configuration uses each physical GPU exactly once.",
+  "caveats": [
+    "Training-set evaluation on forty LAFAN clips, not held-out generalization.",
+    "Added position observations use simulation truth; position-estimator noise is not tested.",
+    "GPU1 has frequent cooling; its assignment is rotated across configurations."
+  ],
+  "upstream_repository": "https://github.com/Huy-Quang-Dao/instantTrack",
+  "upstream_commit": "a33691a08bca8802d9d2985f62e2567479735a8e",
+  "configurations": {
+    "baseline": "none",
+    "root_position": "root",
+    "torso_position": "torso"
+  },
+  "dataset_clips": 40
+}

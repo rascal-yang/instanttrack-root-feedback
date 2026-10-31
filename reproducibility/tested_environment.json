@@ -1,0 +1,16 @@
+{
+  "python": "3.12",
+  "software": {
+    "torch": "2.14.1+cu126",
+    "warp-lang": "1.18.0+cu12",
+    "mujoco": "3.16.0",
+    "mujoco-warp": "3.16.0",
+    "mjlab": "1.6.0",
+    "newton": null,
+    "numpy": "2.5.4"
+  },
+  "mjlab_revision": "8bb2bc9e187797689ec82c78c35019afd2fd0376",
+  "hardware": "NVIDIA GeForce RTX 3090, 24 GiB; one GPU per run, three GPUs rotated across arms",
+  "driver": "550.120",
+  "environment": "Linux x86_64; isolated project environment, no driver upgrade used"
+}
